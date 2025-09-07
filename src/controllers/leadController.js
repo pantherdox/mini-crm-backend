@@ -6,11 +6,21 @@ const mongoose = require('mongoose');
 
 exports.list = async (req, res, next) => {
   try {
-    const { status, q, assignedAgent, archived } = req.query;
+    const { status, q, assignedAgent, archived, showArchived } = req.query;
     const { limit, skip, page } = getPagination(req.query);
     const filter = {};
     if (status) filter.status = status;
-    if (typeof archived !== 'undefined') filter.archived = archived === 'true';
+    
+    // Handle both 'archived' and 'showArchived' parameters for compatibility
+    if (typeof archived !== 'undefined') {
+      filter.archived = archived === 'true';
+    } else if (typeof showArchived !== 'undefined') {
+      filter.archived = showArchived === 'true';
+    } else {
+      // By default, don't show archived leads
+      filter.archived = false;
+    }
+    
     if (req.user.role === 'agent') {
       filter.assignedAgent = new mongoose.Types.ObjectId(req.user.id);
     } else if (assignedAgent) {
@@ -148,6 +158,50 @@ exports.convert = async (req, res, next) => {
       meta: { customerId: customer._id }
     });
     res.json({ lead, customer });
+  } catch (e) { next(e); }
+};
+
+exports.archive = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const lead = await Lead.findById(id);
+    if (!lead) return res.status(404).json({ message: 'Lead not found' });
+    if (req.user.role === 'agent' && String(lead.assignedAgent) !== req.user.id) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    lead.archived = true;
+    lead.history.push({ action: 'archived', by: new mongoose.Types.ObjectId(req.user.id) });
+    await lead.save();
+    await logActivity({
+      type: 'lead_archived',
+      actor: req.user.id,
+      entityType: 'Lead',
+      entityId: lead._id,
+      message: `Lead archived: ${lead.name}`
+    });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+};
+
+exports.unarchive = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const lead = await Lead.findById(id);
+    if (!lead) return res.status(404).json({ message: 'Lead not found' });
+    if (req.user.role === 'agent' && String(lead.assignedAgent) !== req.user.id) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    lead.archived = false;
+    lead.history.push({ action: 'unarchived', by: new mongoose.Types.ObjectId(req.user.id) });
+    await lead.save();
+    await logActivity({
+      type: 'lead_unarchived',
+      actor: req.user.id,
+      entityType: 'Lead',
+      entityId: lead._id,
+      message: `Lead unarchived: ${lead.name}`
+    });
+    res.json({ ok: true });
   } catch (e) { next(e); }
 };
 
