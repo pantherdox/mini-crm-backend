@@ -136,7 +136,7 @@ exports.updateUser = async (req, res, next) => {
     
     // Update password if provided
     if (password && password.trim() !== '') {
-      user.password = password; // The pre-save hook will hash it
+      user.password = password;
     }
     
     await user.save();

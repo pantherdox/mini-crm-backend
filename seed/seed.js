@@ -32,14 +32,14 @@ function phone() { return '+91' + Math.floor(6000000000 + Math.random()*39999999
   const sources = ['Website','Referral','Cold Call','LinkedIn','Email'];
   const leads = [];
   
-  // Generate leads for past 10 days (more recent = more leads)
+  // Generate leads for past 10 days
   const today = new Date();
-  const leadsPerDay = [3, 5, 4, 7, 6, 8, 12, 9, 11, 15]; // Past 10 days, more recent = more leads
+  const leadsPerDay = [3, 5, 4, 7, 6, 8, 12, 9, 11, 15];
   
   for (let day = 0; day < 10; day++) {
     const leadDate = new Date(today);
-    leadDate.setDate(today.getDate() - (9 - day)); // Start from 10 days ago
-    leadDate.setHours(9 + Math.floor(Math.random() * 8)); // Random hour between 9 AM - 5 PM
+    leadDate.setDate(today.getDate() - (9 - day));
+    leadDate.setHours(9 + Math.floor(Math.random() * 8));
     leadDate.setMinutes(Math.floor(Math.random() * 60));
     leadDate.setSeconds(Math.floor(Math.random() * 60));
     
@@ -47,16 +47,15 @@ function phone() { return '+91' + Math.floor(6000000000 + Math.random()*39999999
     
     for (let i = 0; i < leadsForDay; i++) {
       const n = name();
-      const assignedAgent = Math.random() < 0.6 ? agent1._id : agent2._id; // 60% to agent1, 40% to agent2
+      const assignedAgent = Math.random() < 0.6 ? agent1._id : agent2._id;
       
-      // More recent leads are more likely to be "New" or "In Progress"
       let status;
-      if (day < 3) { // Last 3 days
-        status = rand(['New', 'New', 'New', 'In Progress']); // 75% New, 25% In Progress
-      } else if (day < 6) { // 4-6 days ago
-        status = rand(['New', 'In Progress', 'In Progress', 'Closed Won']); // Mix of statuses
-      } else { // 7-10 days ago
-        status = rand(['In Progress', 'Closed Won', 'Closed Won', 'Closed Lost']); // More closed
+      if (day < 3) {
+        status = rand(['New', 'New', 'New', 'In Progress']);
+      } else if (day < 6) { 
+        status = rand(['New', 'In Progress', 'In Progress', 'Closed Won']);
+      } else {
+        status = rand(['In Progress', 'Closed Won', 'Closed Won', 'Closed Lost']);
       }
       
       leads.push({
@@ -66,7 +65,7 @@ function phone() { return '+91' + Math.floor(6000000000 + Math.random()*39999999
         status: status,
         source: rand(sources),
         assignedAgent,
-        createdAt: new Date(leadDate.getTime() + (i * 60000)), // Spread leads throughout the day
+        createdAt: new Date(leadDate.getTime() + (i * 60000)),
         updatedAt: new Date(leadDate.getTime() + (i * 60000)),
         history: [{ 
           action: 'created', 
